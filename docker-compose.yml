@@ -8,8 +8,6 @@ services:
     image: themost-framework/site:latest
     container_name: themost_app
     restart: always
-    ports:
-      - "3000:3000"
     networks:
       - themost-network
   
