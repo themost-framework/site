@@ -1,5 +1,7 @@
 FROM node:22-trixie-slim as builder
 
+RUN apt-get update && apt-get install -y git
+
 WORKDIR /usr/src
 
 RUN git clone https://github.com/themost-framework/site.git app
