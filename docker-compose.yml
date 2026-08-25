@@ -11,7 +11,5 @@ services:
     ports:
       - "3000:3000"
     networks:
-      themost-network:
-        aliases:
-          - www.themost.local
+      - themost-network
   
