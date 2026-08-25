@@ -1,4 +1,4 @@
-FROM node:22-trixie as builder
+FROM node:22-trixie-slim as builder
 
 WORKDIR /usr/src
 
