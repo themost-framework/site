@@ -554,6 +554,52 @@
   background: transparent;
 }
 
+.article-body .hljs {
+  color: #e2e8f0;
+}
+
+.article-body .hljs-comment,
+.article-body .hljs-quote {
+  color: #7c8aa5;
+  font-style: italic;
+}
+
+.article-body .hljs-keyword,
+.article-body .hljs-literal,
+.article-body .hljs-selector-tag {
+  color: #c4a1ff;
+}
+
+.article-body .hljs-string,
+.article-body .hljs-regexp,
+.article-body .hljs-addition {
+  color: #8be0a4;
+}
+
+.article-body .hljs-number,
+.article-body .hljs-built_in,
+.article-body .hljs-symbol {
+  color: #ffb86b;
+}
+
+.article-body .hljs-title,
+.article-body .hljs-title.function_,
+.article-body .hljs-section {
+  color: #7cc4ff;
+}
+
+.article-body .hljs-attr,
+.article-body .hljs-attribute,
+.article-body .hljs-property,
+.article-body .hljs-variable {
+  color: #7fd6e8;
+}
+
+.article-body .hljs-meta,
+.article-body .hljs-deletion {
+  color: #ff8fa3;
+}
+
 .article-navigation {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

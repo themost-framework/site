@@ -1,7 +1,17 @@
 import { useEffect, useState } from 'react'
-import { BrowserRouter, Link, Route, Routes, useParams } from 'react-router-dom'
+import { HashRouter, Link, Route, Routes, useParams } from 'react-router-dom'
 import { articles, articleBySlug } from './generated/articles'
 import './App.css'
+
+// Hash routing owns location.hash, so in-page anchors scroll programmatically.
+function SectionLink({ to, ...props }) {
+  const handleClick = (event) => {
+    event.preventDefault()
+    document.getElementById(to)?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  return <a href={`#/#${to}`} onClick={handleClick} {...props} />
+}
 
 function FrontPage() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -32,9 +42,9 @@ function FrontPage() {
         </div>
 
         <nav className="nav">
-          <a href="#overview">Overview</a>
-          <a href="#foundations">Foundations</a>
-          <a href="#learn">Learn</a>
+          <SectionLink to="overview">Overview</SectionLink>
+          <SectionLink to="foundations">Foundations</SectionLink>
+          <SectionLink to="learn">Learn</SectionLink>
           <a href="https://github.com/themost-framework" target="_blank" rel="noreferrer">
             GitHub
           </a>
@@ -59,9 +69,9 @@ function FrontPage() {
               <Link className="primary-button" to={`/article/${featuredArticle.slug}`}>
                 Explore fundamentals
               </Link>
-              <a className="secondary-button" href="#overview">
+              <SectionLink className="secondary-button" to="overview">
                 See the essentials
-              </a>
+              </SectionLink>
             </div>
           </div>
 
@@ -98,9 +108,9 @@ function FrontPage() {
               connected relationships, API metadata, permissions, and lifecycle behavior.
               Your model keeps coming back with more value as the application grows.
             </p>
-            <a className="secondary-button" href="#foundations">
+            <SectionLink className="secondary-button" to="foundations">
               See how it connects
-            </a>
+            </SectionLink>
           </div>
           <div className="jumbotron-art" aria-hidden="true">
             <img className="jumbotron-boomerang jumbotron-boomerang-purple" src="/images/boomerang_purple.png" alt="" />
@@ -270,12 +280,12 @@ function ArticlePage() {
 
 function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/" element={<FrontPage />} />
         <Route path="/article/:slug" element={<ArticlePage />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   )
 }
 
