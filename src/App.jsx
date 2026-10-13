@@ -1,7 +1,136 @@
 import { useEffect, useState } from 'react'
 import { HashRouter, Link, Route, Routes, useParams } from 'react-router-dom'
-import { articles, articleBySlug } from './generated/articles'
+import { articles, articleBySlug, folders as folderMeta } from './generated/articles'
 import './App.css'
+
+function folderLabel(folderPath) {
+  const name = folderPath.split('/').pop().replace(/[-_]/g, ' ')
+  return name.charAt(0).toUpperCase() + name.slice(1)
+}
+
+// Title from the folder's index.md, falling back to its path.
+function folderTitle(folderPath) {
+  return folderMeta[folderPath]?.title || folderPath.split('/').map(folderLabel).join(' / ')
+}
+
+// Direct articles and immediate sub-folders of a folder ('' is the root).
+function listFolder(folder) {
+  const prefix = folder ? `${folder}/` : ''
+  const folders = new Map()
+  const folderPaths = new Set([
+    ...articles.map((article) => article.folder),
+    ...Object.keys(folderMeta),
+  ])
+
+  for (const folderPath of folderPaths) {
+    if (!folderPath.startsWith(prefix) || folderPath === folder) {
+      continue
+    }
+    const name = folderPath.slice(prefix.length).split('/')[0]
+    if (!folders.has(name)) {
+      folders.set(name, { path: `${prefix}${name}`, count: countArticles(`${prefix}${name}`) })
+    }
+  }
+
+  return {
+    articles: articles.filter((article) => article.folder === folder),
+    folders: [...folders.values()],
+  }
+}
+
+function countArticles(folderPath) {
+  return articles.filter(
+    (article) => article.folder === folderPath || article.folder.startsWith(`${folderPath}/`),
+  ).length
+}
+
+// Every folder at any depth, with the number of articles beneath it.
+function listAllFolders() {
+  const paths = new Set(Object.keys(folderMeta))
+
+  for (const article of articles) {
+    const segments = article.folder ? article.folder.split('/') : []
+    for (let depth = 1; depth <= segments.length; depth += 1) {
+      paths.add(segments.slice(0, depth).join('/'))
+    }
+  }
+
+  return [...paths].sort().map((folderPath) => ({ path: folderPath, count: countArticles(folderPath) }))
+}
+
+function FolderCard({ folder }) {
+  return (
+    <Link className="article-card-item" to={`/folder/${folder.path}`}>
+      <div className="article-card-top">
+        <span className="mini-label">{folderMeta[folder.path]?.category || 'Folder'}</span>
+        <span className="reading-time">{folder.count} {folder.count === 1 ? 'article' : 'articles'}</span>
+      </div>
+      <h3>{folderTitle(folder.path)}</h3>
+      <p>{folderMeta[folder.path]?.summary || 'Browse the articles in this section.'}</p>
+      <span className="card-link">Explore articles →</span>
+    </Link>
+  )
+}
+
+function ArticleCard({ article }) {
+  return (
+    <Link className="article-card-item" to={`/article/${article.slug}`}>
+      <div className="article-card-top">
+        <span className="mini-label">{article.category}</span>
+        <span className="reading-time">{article.readingTime}</span>
+      </div>
+      <h3>{article.title}</h3>
+      <p>{article.summary}</p>
+      <span className="card-link">Read article →</span>
+    </Link>
+  )
+}
+
+function FolderPage() {
+  const { '*': folder } = useParams()
+  const entries = listFolder(folder)
+  const parent = folder.includes('/') ? `/folder/${folder.slice(0, folder.lastIndexOf('/'))}` : '/'
+  const meta = folderMeta[folder]
+
+  if (entries.articles.length === 0 && entries.folders.length === 0 && !meta) {
+    return (
+      <div className="article-shell error-state">
+        <h1>Folder not found</h1>
+        <Link className="primary-button" to="/">
+          Return home
+        </Link>
+      </div>
+    )
+  }
+
+  return (
+    <div className="article-shell">
+      <header className="article-header">
+        <Link className="crumb" to={parent}>
+          ← Back
+        </Link>
+      </header>
+      <section className="article-section">
+        <div className="section-heading">
+          <p className="eyebrow">Articles</p>
+          <h2>{folderTitle(folder)}</h2>
+          {meta?.summary && <p className="article-summary-text">{meta.summary}</p>}
+        </div>
+        {meta?.contentHtml && (
+          <div className="article-body" dangerouslySetInnerHTML={{ __html: meta.contentHtml }} />
+        )}
+        <div className="article-grid">
+          {entries.folders.map((entry) => (
+            <FolderCard key={entry.path} folder={entry} />
+          ))}
+          {entries.articles.map((article) => (
+            <ArticleCard key={article.slug} article={article} />
+          ))}
+        </div>
+      </section>
+    </div>
+  )
+}
 
 // Hash routing owns location.hash, so in-page anchors scroll programmatically.
 function SectionLink({ to, ...props }) {
@@ -29,6 +158,7 @@ function FrontPage() {
       return searchableText.includes(normalizedSearchTerm)
     })
     : articles
+  const rootEntries = { articles: listFolder('').articles, folders: listAllFolders() }
 
   return (
     <div className="site-shell">
@@ -185,16 +315,11 @@ function FrontPage() {
 
           {filteredArticles.length > 0 ? (
             <div className="article-grid">
-              {filteredArticles.map((article) => (
-                <Link key={article.slug} className="article-card-item" to={`/article/${article.slug}`}>
-                  <div className="article-card-top">
-                    <span className="mini-label">{article.category}</span>
-                    <span className="reading-time">{article.readingTime}</span>
-                  </div>
-                  <h3>{article.title}</h3>
-                  <p>{article.summary}</p>
-                  <span className="card-link">Read article →</span>
-                </Link>
+              {!normalizedSearchTerm && rootEntries.folders.map((entry) => (
+                <FolderCard key={entry.path} folder={entry} />
+              ))}
+              {(normalizedSearchTerm ? filteredArticles : rootEntries.articles).map((article) => (
+                <ArticleCard key={article.slug} article={article} />
               ))}
             </div>
           ) : (
@@ -207,7 +332,7 @@ function FrontPage() {
 }
 
 function ArticlePage() {
-  const { slug } = useParams()
+  const { '*': slug } = useParams()
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
@@ -234,8 +359,8 @@ function ArticlePage() {
   return (
     <div className="article-shell">
       <header className="article-header">
-        <Link className="crumb" to="/">
-          ← Back to overview
+        <Link className="crumb" to={meta.folder ? `/folder/${meta.folder}` : '/'}>
+          {meta.folder ? `← Back to ${folderTitle(meta.folder)}` : '← Back to overview'}
         </Link>
       </header>
 
@@ -283,7 +408,8 @@ function App() {
     <HashRouter>
       <Routes>
         <Route path="/" element={<FrontPage />} />
-        <Route path="/article/:slug" element={<ArticlePage />} />
+        <Route path="/article/*" element={<ArticlePage />} />
+        <Route path="/folder/*" element={<FolderPage />} />
       </Routes>
     </HashRouter>
   )

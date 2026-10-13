@@ -62,8 +62,10 @@ function ensureGeneratedDir() {
 }
 
 function compareArticleFiles(firstFile, secondFile) {
-  const firstIndex = Number(firstFile.match(/^(\d+)-/)?.[1])
-  const secondIndex = Number(secondFile.match(/^(\d+)-/)?.[1])
+  const firstName = path.basename(firstFile)
+  const secondName = path.basename(secondFile)
+  const firstIndex = Number(firstName.match(/^(\d+)-/)?.[1])
+  const secondIndex = Number(secondName.match(/^(\d+)-/)?.[1])
 
   if (Number.isFinite(firstIndex) && Number.isFinite(secondIndex) && firstIndex !== secondIndex) {
     return firstIndex - secondIndex
@@ -72,38 +74,87 @@ function compareArticleFiles(firstFile, secondFile) {
   return firstFile.localeCompare(secondFile)
 }
 
+function findArticleFiles(directory) {
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const entryPath = path.join(directory, entry.name)
+
+    if (entry.isDirectory()) {
+      return findArticleFiles(entryPath)
+    }
+
+    return entry.isFile() && entry.name.toLowerCase().endsWith('.md') ? [entryPath] : []
+  })
+}
+
+// A folder's index.md describes the folder (home tile and folder page) and is not an article.
+function isFolderIndex(filePath) {
+  return path.basename(filePath).toLowerCase() === 'index.md'
+}
+
+function readFolders() {
+  if (!fs.existsSync(publicArticlesDir)) {
+    return {}
+  }
+
+  const folders = {}
+
+  for (const filePath of findArticleFiles(publicArticlesDir).filter(isFolderIndex)) {
+    const folder = path.relative(publicArticlesDir, path.dirname(filePath)).split(path.sep).join('/')
+
+    if (!folder) {
+      continue
+    }
+
+    const { meta, body } = parseFrontMatter(fs.readFileSync(filePath, 'utf8'))
+    folders[folder] = {
+      title: meta.title || '',
+      summary: meta.summary || '',
+      category: meta.category || '',
+      contentHtml: body.trim() ? marked.parse(body, { breaks: true, gfm: true }) : '',
+    }
+  }
+
+  return folders
+}
+
 function readArticleFiles() {
   if (!fs.existsSync(publicArticlesDir)) {
     return []
   }
 
-  return fs
-    .readdirSync(publicArticlesDir)
-    .filter((file) => file.toLowerCase().endsWith('.md'))
-  .sort(compareArticleFiles)
-    .map((file) => {
-      const filePath = path.join(publicArticlesDir, file)
+  return findArticleFiles(publicArticlesDir)
+    .filter((filePath) => !isFolderIndex(filePath))
+    .sort((firstPath, secondPath) =>
+      compareArticleFiles(
+        path.relative(publicArticlesDir, firstPath),
+        path.relative(publicArticlesDir, secondPath),
+      ),
+    )
+    .map((filePath) => {
+      const source = path.relative(publicArticlesDir, filePath).split(path.sep).join('/')
       const markdown = fs.readFileSync(filePath, 'utf8')
       const { meta, body } = parseFrontMatter(markdown)
-      const slug = toSlug(file)
+      const slug = toSlug(source)
 
       return {
         slug,
+        folder: path.posix.dirname(source) === '.' ? '' : path.posix.dirname(source),
         title: meta.title || slug.replace(/[-_]/g, ' '),
         summary: meta.summary || 'Read the article',
         category: meta.category || 'Article',
         readingTime: meta.readingTime || '5 min read',
-        source: file,
+        source,
         contentHtml: marked.parse(body, { breaks: true, gfm: true }),
       }
     })
 }
 
-function writeGeneratedIndex(articles) {
+function writeGeneratedIndex(articles, folders) {
   const articleEntries = articles
     .map(
       (article) => `  {
     slug: ${JSON.stringify(article.slug)},
+    folder: ${JSON.stringify(article.folder)},
     title: ${JSON.stringify(article.title)},
     summary: ${JSON.stringify(article.summary)},
     category: ${JSON.stringify(article.category)},
@@ -118,6 +169,7 @@ function writeGeneratedIndex(articles) {
     .map(
       (article) => `  ${JSON.stringify(article.slug)}: {
     slug: ${JSON.stringify(article.slug)},
+    folder: ${JSON.stringify(article.folder)},
     title: ${JSON.stringify(article.title)},
     summary: ${JSON.stringify(article.summary)},
     category: ${JSON.stringify(article.category)},
@@ -128,7 +180,7 @@ function writeGeneratedIndex(articles) {
     )
     .join(',\n')
 
-  const output = `export const articles = [\n${articleEntries}\n]\n\nexport const articleBySlug = {\n${articleBySlugEntries}\n}\n`
+  const output = `export const articles = [\n${articleEntries}\n]\n\nexport const articleBySlug = {\n${articleBySlugEntries}\n}\n\nexport const folders = ${JSON.stringify(folders, null, 2)}\n`
 
   fs.writeFileSync(generatedFile, output, 'utf8')
 }
@@ -136,7 +188,7 @@ function writeGeneratedIndex(articles) {
 function main() {
   ensureGeneratedDir()
   const articles = readArticleFiles()
-  writeGeneratedIndex(articles)
+  writeGeneratedIndex(articles, readFolders())
   console.log(`Generated ${articles.length} article metadata entries.`)
 }
 
