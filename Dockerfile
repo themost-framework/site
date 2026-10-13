@@ -1,6 +1,6 @@
-FROM node:22-trixie-slim as builder
+FROM node:22-alpine as builder
 
-RUN apt-get update && apt-get install -y git
+RUN apk add --no-cache git
 
 WORKDIR /usr/src
 
