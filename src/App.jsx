@@ -352,11 +352,35 @@ function FrontPage({ theme, onToggleTheme }) {
   )
 }
 
+function BackToTop() {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => setVisible(window.scrollY > 400)
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  return (
+    <button
+      className={`back-to-top${visible ? ' is-visible' : ''}`}
+      type="button"
+      aria-label="Back to top"
+      title="Back to top"
+      tabIndex={visible ? 0 : -1}
+      onClick={() => window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })}
+    >
+      ↑
+    </button>
+  )
+}
+
 function ArticlePage({ theme, onToggleTheme }) {
   const { '*': slug } = useParams()
 
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
   }, [slug])
 
   const meta = articleBySlug[slug]
@@ -421,6 +445,7 @@ function ArticlePage({ theme, onToggleTheme }) {
           )}
         </div>
       </article>
+      <BackToTop />
     </div>
   )
 }
