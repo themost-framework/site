@@ -57,10 +57,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #c4b5fd 0%, #8b5cf6 100%);
+  //background: linear-gradient(135deg, #c4b5fd 0%, #8b5cf6 100%);
   color: #160d2b;
   font-weight: 800;
 }

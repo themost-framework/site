@@ -182,7 +182,9 @@ function FrontPage({ theme, onToggleTheme }) {
     <div className="site-shell">
       <header className="topbar">
         <div className="brand-wrap">
-          <span className="brand-mark">@</span>
+          <span className="brand-mark">
+            <img src="images/themost_framework_v3_192.png" alt="@themost-framework logo" />
+          </span>
           <div>
             <div className="brand-name">themost</div>
             <div className="brand-sub">framework</div>
