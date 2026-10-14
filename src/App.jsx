@@ -86,7 +86,24 @@ function ArticleCard({ article }) {
   )
 }
 
-function FolderPage() {
+function ThemeToggle({ theme, onToggle }) {
+  const nextTheme = theme === 'dark' ? 'light' : 'dark'
+
+  return (
+    <button
+      className="theme-toggle"
+      type="button"
+      onClick={onToggle}
+      aria-label={`Switch to ${nextTheme} mode`}
+      title={`Switch to ${nextTheme} mode`}
+    >
+      <span aria-hidden="true">{theme === 'dark' ? '☀' : '☾'}</span>
+      <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+    </button>
+  )
+}
+
+function FolderPage({ theme, onToggleTheme }) {
   const { '*': folder } = useParams()
   const entries = listFolder(folder)
   const parent = folder.includes('/') ? `/folder/${folder.slice(0, folder.lastIndexOf('/'))}` : '/'
@@ -109,6 +126,7 @@ function FolderPage() {
         <Link className="crumb" to={parent}>
           ← Back
         </Link>
+        <ThemeToggle theme={theme} onToggle={onToggleTheme} />
       </header>
       <section className="article-section">
         <div className="section-heading">
@@ -142,7 +160,7 @@ function SectionLink({ to, ...props }) {
   return <a href={`#/#${to}`} onClick={handleClick} {...props} />
 }
 
-function FrontPage() {
+function FrontPage({ theme, onToggleTheme }) {
   const [searchTerm, setSearchTerm] = useState('')
   const featuredArticle = articles[0] ?? {
     slug: 'data-fundamentals',
@@ -180,9 +198,12 @@ function FrontPage() {
           </a>
         </nav>
 
-        <Link className="primary-button slim" to={`/article/${featuredArticle.slug}`}>
-          Read the guide
-        </Link>
+        <div className="topbar-actions">
+          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+          <Link className="primary-button slim" to={`/article/${featuredArticle.slug}`}>
+            Read the guide
+          </Link>
+        </div>
       </header>
 
       <main>
@@ -331,7 +352,7 @@ function FrontPage() {
   )
 }
 
-function ArticlePage() {
+function ArticlePage({ theme, onToggleTheme }) {
   const { '*': slug } = useParams()
 
   useEffect(() => {
@@ -362,6 +383,7 @@ function ArticlePage() {
         <Link className="crumb" to={meta.folder ? `/folder/${meta.folder}` : '/'}>
           {meta.folder ? `← Back to ${folderTitle(meta.folder)}` : '← Back to overview'}
         </Link>
+        <ThemeToggle theme={theme} onToggle={onToggleTheme} />
       </header>
 
       <article className="article-card">
@@ -404,12 +426,26 @@ function ArticlePage() {
 }
 
 function App() {
+  const [theme, setTheme] = useState(() => {
+    const savedTheme = window.localStorage.getItem('site-theme')
+    return savedTheme || 'dark'
+  })
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    window.localStorage.setItem('site-theme', theme)
+  }, [theme])
+
+  const toggleTheme = () => {
+    setTheme((currentTheme) => currentTheme === 'dark' ? 'light' : 'dark')
+  }
+
   return (
     <HashRouter>
       <Routes>
-        <Route path="/" element={<FrontPage />} />
-        <Route path="/article/*" element={<ArticlePage />} />
-        <Route path="/folder/*" element={<FolderPage />} />
+        <Route path="/" element={<FrontPage theme={theme} onToggleTheme={toggleTheme} />} />
+        <Route path="/article/*" element={<ArticlePage theme={theme} onToggleTheme={toggleTheme} />} />
+        <Route path="/folder/*" element={<FolderPage theme={theme} onToggleTheme={toggleTheme} />} />
       </Routes>
     </HashRouter>
   )

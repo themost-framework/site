@@ -11,6 +11,12 @@
   color-scheme: dark;
 }
 
+:root[data-theme='light'] {
+  color: #231a35;
+  background: #f8f6fc;
+  color-scheme: light;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -26,6 +32,12 @@ body {
   background:
     radial-gradient(circle at top, rgba(139, 92, 246, 0.28), transparent 30%),
     linear-gradient(180deg, #100b1f 0%, #1b1233 100%);
+}
+
+:root[data-theme='light'] body {
+  background:
+    radial-gradient(circle at top, rgba(139, 92, 246, 0.12), transparent 32%),
+    linear-gradient(180deg, #fbfaff 0%, #f1edf8 100%);
 }
 
 img {
