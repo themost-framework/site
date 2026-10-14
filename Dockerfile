@@ -14,6 +14,9 @@ RUN npm i
 RUN mkdir -p ./public/articles/data
 RUN npx degit https://github.com/themost-framework/data/docs#master public/articles/data
 
+RUN mkdir -p ./public/articles/query
+RUN npx degit https://github.com/themost-framework/query/docs#master public/articles/query
+
 RUN npm run build
 
 FROM nginx:stable-alpine AS production
