@@ -12,7 +12,7 @@ RUN npm i
 
 # Get artifacts from the build stage
 RUN mkdir -p ./public/articles/data
-RUN npx degit https://github.com/themost-framework/data.git public/articles/data
+RUN npx degit https://github.com/themost-framework/data/docs#master public/articles/data
 
 RUN npm run build
 
