@@ -1,4 +1,5 @@
 ---
+index: 30
 title: "JavaScript Closures for Filtering"
 summary: "Use native JavaScript predicates inside queries to express secure, readable filters without writing manual SQL."
 category: "Querying"

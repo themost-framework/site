@@ -1,4 +1,5 @@
 ---
+index: 90
 title: "Model Associations"
 summary: "Model one-to-many and many-to-many relationships with declarative field configuration and implicit joins."
 category: "Relations"

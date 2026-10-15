@@ -1,4 +1,5 @@
 ---
+index: 10
 title: "Connection and Data Context"
 summary: "Understand the DataContext lifecycle and why every database operation starts from a managed connection scope."
 category: "Core Data Layer"

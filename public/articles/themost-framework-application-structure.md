@@ -1,4 +1,5 @@
 ---
+index: 1
 title: "The @themost-framework Application Structure"
 summary: "Use @themost/test as a map for organizing a @themost-framework application, from configuration and models to routes, authentication, and the database."
 category: "Application Architecture"

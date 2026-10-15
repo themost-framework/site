@@ -1,4 +1,5 @@
 ---
+index: 60
 title: "Data Listeners"
 summary: "Intercept entity flows before and after persistence to validate state and add business behavior cleanly."
 category: "Event Model"

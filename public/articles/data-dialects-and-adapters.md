@@ -1,4 +1,5 @@
 ---
+index: 7
 title: "Data Dialects and Database Adapters"
 summary: "Understand how @themost-framework keeps model code portable while @themost/mysql, @themost/sqlite, @themost/pg, @themost/oracle, and other adapters handle database-specific behavior."
 category: "Data Layer"

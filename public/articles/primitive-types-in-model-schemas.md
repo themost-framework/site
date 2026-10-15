@@ -1,4 +1,5 @@
 ---
+index: 140
 title: "Primitive Types in Model Schemas"
 summary: "Learn how @themost-framework primitive types such as Text, Number, Counter, Boolean, and Date describe the fields in a model."
 category: "Schema Design"

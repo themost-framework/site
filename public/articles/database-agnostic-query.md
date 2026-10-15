@@ -1,4 +1,5 @@
 ---
+index: 6
 title: "A Database-Agnostic Query with @themost/query"
 summary: "Build readable queries with JavaScript expressions and let @themost/query translate them for different database engines."
 category: "Querying"

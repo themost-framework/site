@@ -1,4 +1,5 @@
 ---
+index: 70
 title: "Aggregations and Grouping"
 summary: "Summarize datasets with grouping and aggregate expressions that remain readable and portable."
 category: "Analytics"

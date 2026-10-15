@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "negit": "negit",
     "generate:articles": "node scripts/generate-articles.mjs",
     "dev": "npm run generate:articles && vite",
     "build": "npm run generate:articles && vite build",
@@ -22,6 +23,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.4",
+    "degit": "^3.10.0",
     "oxlint": "^1.75.0",
     "vite": "^8.2.0"
   }

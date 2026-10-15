@@ -1,4 +1,5 @@
 ---
+index: 20
 title: "Basic Data Retrieval"
 summary: "Use the fluent query API to fetch, filter, sort, and shape records with readable JavaScript patterns."
 category: "Querying"

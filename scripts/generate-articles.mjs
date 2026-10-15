@@ -61,17 +61,21 @@ function ensureGeneratedDir() {
   fs.mkdirSync(generatedDir, { recursive: true })
 }
 
-function compareArticleFiles(firstFile, secondFile) {
-  const firstName = path.basename(firstFile)
-  const secondName = path.basename(secondFile)
-  const firstIndex = Number(firstName.match(/^(\d+)-/)?.[1])
-  const secondIndex = Number(secondName.match(/^(\d+)-/)?.[1])
-
-  if (Number.isFinite(firstIndex) && Number.isFinite(secondIndex) && firstIndex !== secondIndex) {
-    return firstIndex - secondIndex
+// Sort by the optional "index" front matter property; articles without one fall back to the file name prefix.
+function resolveIndex(meta, filePath) {
+  const fromMeta = meta.index !== undefined && meta.index !== '' ? Number(meta.index) : NaN
+  if (Number.isFinite(fromMeta)) {
+    return fromMeta
   }
+  const fromName = Number(path.basename(filePath).match(/^(\d+)-/)?.[1])
+  return Number.isFinite(fromName) ? fromName : Infinity
+}
 
-  return firstFile.localeCompare(secondFile)
+function compareArticles(first, second) {
+  if (first.index !== second.index) {
+    return first.index < second.index ? -1 : 1
+  }
+  return first.source.localeCompare(second.source)
 }
 
 function findArticleFiles(directory) {
@@ -124,17 +128,12 @@ function readArticleFiles() {
 
   return findArticleFiles(publicArticlesDir)
     .filter((filePath) => !isFolderIndex(filePath))
-    .sort((firstPath, secondPath) =>
-      compareArticleFiles(
-        path.relative(publicArticlesDir, firstPath),
-        path.relative(publicArticlesDir, secondPath),
-      ),
-    )
     .map((filePath) => {
       const source = path.relative(publicArticlesDir, filePath).split(path.sep).join('/')
       const markdown = fs.readFileSync(filePath, 'utf8')
       const { meta, body } = parseFrontMatter(markdown)
       const slug = toSlug(source)
+      const index = resolveIndex(meta, filePath)
 
       return {
         slug,
@@ -144,9 +143,11 @@ function readArticleFiles() {
         category: meta.category || 'Article',
         readingTime: meta.readingTime || '5 min read',
         source,
+        index,
         contentHtml: marked.parse(body, { breaks: true, gfm: true }),
       }
     })
+    .sort(compareArticles)
 }
 
 function writeGeneratedIndex(articles, folders) {

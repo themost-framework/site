@@ -1,4 +1,5 @@
 ---
+index: 5
 title: "Getting Started with @themost/express"
 summary: "Connect @themost/data to an Express application with request contexts, model queries, and the built-in service router."
 category: "Express Integration"

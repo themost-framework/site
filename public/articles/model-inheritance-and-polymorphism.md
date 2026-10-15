@@ -1,4 +1,5 @@
 ---
+index: 100
 title: "Model Inheritance and Polymorphism"
 summary: "Use inheritance to extend shared model behavior while preserving specialized data contracts for child entities."
 category: "Model Design"

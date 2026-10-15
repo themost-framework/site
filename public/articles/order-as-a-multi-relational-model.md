@@ -1,4 +1,5 @@
 ---
+index: 130
 title: "Order as a Multi-Relational Model"
 summary: "Use the Order schema from @themost/test to understand how one business object can connect customers, offers, products, payments, status, and access rules."
 category: "Data Modelling"

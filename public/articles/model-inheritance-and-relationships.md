@@ -1,4 +1,5 @@
 ---
+index: 120
 title: "Model Inheritance and Relationships"
 summary: "See how @themost/test connects entity types with inheritance and relationships, then exposes the model as queryable OData metadata."
 category: "Data Modelling"

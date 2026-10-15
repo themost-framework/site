@@ -1,4 +1,5 @@
 ---
+index: 40
 title: "Relationships and Eager Loading"
 summary: "Load related records intentionally with expansion rules that keep data retrieval efficient and expressive."
 category: "Relationships"

@@ -1,4 +1,5 @@
 ---
+index: 50
 title: "Atomic Transactions"
 summary: "Protect dependent data updates with transaction boundaries that roll back cleanly on failure."
 category: "Data Integrity"

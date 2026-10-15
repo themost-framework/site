@@ -1,4 +1,5 @@
 ---
+index: 80
 title: "Schema Definition and Basic Attributes"
 summary: "Declare models with schema metadata that defines storage mapping, constraints, and field behavior."
 category: "Schema Design"

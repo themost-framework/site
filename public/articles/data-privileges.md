@@ -1,4 +1,5 @@
 ---
+index: 150
 title: "Data Privileges"
 summary: "Learn the basics of model-level access rules in @themost/data using global, account, and self privileges."
 category: "Security"
