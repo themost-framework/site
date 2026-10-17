@@ -41,3 +41,5 @@ Model properties in `@themost/data` are declared using JSON-based schema configu
 ## Why schema metadata matters
 
 Schemas make the storage contract visible and maintainable. They give the framework a consistent description of the domain while allowing different backends to implement that contract in their own way.
+
+Once you have your schema defined, you can start [querying data](./basic-data-retrieval.md) with the fluent API. You can also explore [model associations](model-associations.md) to understand relationships.

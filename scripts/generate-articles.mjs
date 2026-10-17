@@ -13,6 +13,56 @@ hljs.registerLanguage('js', javascript)
 hljs.registerLanguage('json', json)
 hljs.registerLanguage('bash', bash)
 
+function createMarkdownRenderer(articlePathMap) {
+  return {
+    link(token) {
+      const { href, text, title } = token
+      const titleAttr = title ? ` title="${title}"` : ''
+
+      // Skip external URLs and hash links
+      if (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('#')) {
+        return `<a href="${href}"${titleAttr}>${text}</a>`
+      }
+
+      // Convert .md file paths to article routes
+      if (href.endsWith('.md')) {
+        const targetSlug = articlePathMap[href]
+        if (targetSlug) {
+          return `<a href="#/article/${targetSlug}"${titleAttr}>${text}</a>`
+        }
+        // If file doesn't exist, keep the original href
+        return `<a href="${href}"${titleAttr}>${text}</a>`
+      }
+
+      return `<a href="${href}"${titleAttr}>${text}</a>`
+    },
+  }
+}
+
+function buildArticlePathMap(allArticles) {
+  const map = {}
+
+  for (const article of allArticles) {
+    map[article.source] = article.slug
+    // Also map with ./ prefix for local references
+    map[`./${article.source}`] = article.slug
+  }
+
+  return map
+}
+
+function resolveRelativePath(fromFilePath, targetHref) {
+  const fromDir = path.posix.dirname(fromFilePath)
+  let resolvedPath = path.posix.normalize(path.posix.join(fromDir, targetHref))
+
+  // Remove leading ./
+  if (resolvedPath.startsWith('./')) {
+    resolvedPath = resolvedPath.slice(2)
+  }
+
+  return resolvedPath
+}
+
 const marked = new Marked(
   markedHighlight({
     emptyLangClass: 'hljs',
@@ -101,8 +151,20 @@ function readFolders() {
   }
 
   const folders = {}
+  const folderIndexFiles = findArticleFiles(publicArticlesDir).filter(isFolderIndex)
 
-  for (const filePath of findArticleFiles(publicArticlesDir).filter(isFolderIndex)) {
+  // Build path map for link resolution (collect all articles first)
+  const allArticleFiles = findArticleFiles(publicArticlesDir).filter((fp) => !isFolderIndex(fp))
+  const pathToSlugMap = {}
+
+  for (const filePath of allArticleFiles) {
+    const source = path.relative(publicArticlesDir, filePath).split(path.sep).join('/')
+    const slug = toSlug(source)
+    pathToSlugMap[source] = slug
+    pathToSlugMap[`./${source}`] = slug
+  }
+
+  for (const filePath of folderIndexFiles) {
     const folder = path.relative(publicArticlesDir, path.dirname(filePath)).split(path.sep).join('/')
 
     if (!folder) {
@@ -110,11 +172,51 @@ function readFolders() {
     }
 
     const { meta, body } = parseFrontMatter(fs.readFileSync(filePath, 'utf8'))
+
+    // Create folder-specific link resolver
+    const createLinkResolver = (fromSource) => {
+      return {
+        link(token) {
+          const { href, text, title } = token
+          const titleAttr = title ? ` title="${title}"` : ''
+
+          if (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('#')) {
+            return `<a href="${href}"${titleAttr}>${text}</a>`
+          }
+
+          if (href.endsWith('.md')) {
+            const resolvedPath = resolveRelativePath(fromSource, href)
+            const targetSlug = pathToSlugMap[resolvedPath]
+
+            if (targetSlug) {
+              return `<a href="#/article/${targetSlug}"${titleAttr}>${text}</a>`
+            }
+
+            console.warn(`Warning: Folder link not found: ${href} from ${fromSource} (resolved to ${resolvedPath})`)
+            return `<a href="${href}"${titleAttr}>${text}</a>`
+          }
+
+          return `<a href="${href}"${titleAttr}>${text}</a>`
+        },
+      }
+    }
+
+    const markedWithResolver = new Marked(
+      markedHighlight({
+        emptyLangClass: 'hljs',
+        langPrefix: 'hljs language-',
+        highlight(code, lang) {
+          return hljs.getLanguage(lang) ? hljs.highlight(code, { language: lang }).value : code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        },
+      }),
+    )
+    markedWithResolver.use({ renderer: createLinkResolver(`${folder}/index.md`) })
+
     folders[folder] = {
       title: meta.title || '',
       summary: meta.summary || '',
       category: meta.category || '',
-      contentHtml: body.trim() ? marked.parse(body, { breaks: true, gfm: true }) : '',
+      contentHtml: body.trim() ? markedWithResolver.parse(body, { breaks: true, gfm: true }) : '',
     }
   }
 
@@ -126,7 +228,8 @@ function readArticleFiles() {
     return []
   }
 
-  return findArticleFiles(publicArticlesDir)
+  // First pass: collect all article metadata without parsing HTML
+  const rawArticles = findArticleFiles(publicArticlesDir)
     .filter((filePath) => !isFolderIndex(filePath))
     .map((filePath) => {
       const source = path.relative(publicArticlesDir, filePath).split(path.sep).join('/')
@@ -144,7 +247,76 @@ function readArticleFiles() {
         readingTime: meta.readingTime || '5 min read',
         source,
         index,
-        contentHtml: marked.parse(body, { breaks: true, gfm: true }),
+        body,
+        _filePath: filePath,
+      }
+    })
+
+  // Build a map of relative paths to slugs for link resolution
+  const pathToSlugMap = {}
+  for (const article of rawArticles) {
+    pathToSlugMap[article.source] = article.slug
+    pathToSlugMap[`./${article.source}`] = article.slug
+  }
+
+  // Second pass: parse markdown with link resolution
+  return rawArticles
+    .map((article) => {
+      // Create article-specific link resolver
+      const createLinkResolver = (fromSource) => {
+        const fromDir = path.posix.dirname(fromSource)
+
+        return {
+          link(token) {
+            const { href, text, title } = token
+            const titleAttr = title ? ` title="${title}"` : ''
+
+            // Skip external URLs and hash links
+            if (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('#')) {
+              return `<a href="${href}"${titleAttr}>${text}</a>`
+            }
+
+            // Convert .md file paths to article routes
+            if (href.endsWith('.md')) {
+              const resolvedPath = resolveRelativePath(fromSource, href)
+              const targetSlug = pathToSlugMap[resolvedPath]
+
+              if (targetSlug) {
+                return `<a href="#/article/${targetSlug}"${titleAttr}>${text}</a>`
+              }
+
+              // If file doesn't exist, keep the original href as a warning
+              console.warn(`Warning: Article link not found: ${href} from ${fromSource} (resolved to ${resolvedPath})`)
+              return `<a href="${href}"${titleAttr}>${text}</a>`
+            }
+
+            return `<a href="${href}"${titleAttr}>${text}</a>`
+          },
+        }
+      }
+
+      // Use a temporary marked instance with the article-specific renderer
+      const markedWithResolver = new Marked(
+        markedHighlight({
+          emptyLangClass: 'hljs',
+          langPrefix: 'hljs language-',
+          highlight(code, lang) {
+            return hljs.getLanguage(lang) ? hljs.highlight(code, { language: lang }).value : code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          },
+        }),
+      )
+      markedWithResolver.use({ renderer: createLinkResolver(article.source) })
+
+      return {
+        slug: article.slug,
+        folder: article.folder,
+        title: article.title,
+        summary: article.summary,
+        category: article.category,
+        readingTime: article.readingTime,
+        source: article.source,
+        index: article.index,
+        contentHtml: markedWithResolver.parse(article.body, { breaks: true, gfm: true }),
       }
     })
     .sort(compareArticles)
