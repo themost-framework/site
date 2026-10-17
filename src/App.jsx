@@ -399,9 +399,10 @@ function ArticlePage({ theme, onToggleTheme }) {
     )
   }
 
-  const currentIndex = articles.findIndex((article) => article.slug === slug)
-  const previousArticle = currentIndex > 0 ? articles[currentIndex - 1] : null
-  const nextArticle = currentIndex >= 0 && currentIndex < articles.length - 1 ? articles[currentIndex + 1] : null
+  const folderArticles = articles.filter((article) => article.folder === meta.folder)
+  const currentIndex = folderArticles.findIndex((article) => article.slug === slug)
+  const previousArticle = currentIndex > 0 ? folderArticles[currentIndex - 1] : null
+  const nextArticle = currentIndex >= 0 && currentIndex < folderArticles.length - 1 ? folderArticles[currentIndex + 1] : null
 
   return (
     <div className="article-shell">
